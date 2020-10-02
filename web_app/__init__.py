@@ -124,6 +124,7 @@ def submit_form():
             map(lambda x: x.replace("\\n", "\n"), request.form['content'].split('\n'))
         )  # split the message by new lines
         session['table'] = request.form['table']  # the event table whose participants are to be contacted
+        session['path'] = request.form['path']  # path to local csv containing participants' data
         session['ids'] = request.form['ids']  # the ids (space separated) who are to be contacted
         return render_template('loading.html', target='/qr')  # show loading page while selenium opens whatsapp web
 
@@ -141,7 +142,7 @@ def send_mail(**kwargs):
     # Get data from our API
     # get_data() returns two lists - first containing names and second containing numbers
     if kwargs['ids'] == 'all':  # retrieve names and numbers of all participants
-        names = meow.get_data(data['table-api'], kwargs['table'], kwargs['headers'], 'all')[0]
+        names = meow.get_data(data['table-api'], kwargs['table'], kwargs['headers'], 'all', kwargs['path'])[0]
     else:  # retrieve names and numbers of participants whose id was listed by user
         # since ids are retrieved from form as a space separated string
         # split the string by space and convert all resultant list items to int
@@ -150,6 +151,7 @@ def send_mail(**kwargs):
             kwargs['table'],
             kwargs['headers'],
             list(map(lambda x: int(x), kwargs['ids'].split(' '))),
+            kwargs['path'],
         )[0]
 
     if response.status_code == 200:
@@ -228,13 +230,14 @@ def send_messages(**kwargs):
         # Get data from our API
         # get_data() returns two lists - first containing names and second containing numbers
         if kwargs['ids'] == 'all':
-            names, numbers = meow.get_data(data['table-api'], kwargs['table'], kwargs['headers'], 'all')
+            names, numbers = meow.get_data(data['table-api'], kwargs['table'], kwargs['headers'], 'all', kwargs['path'])
         else:
             names, numbers = meow.get_data(
                 data['table-api'],
                 kwargs['table'],
                 kwargs['headers'],
                 list(map(lambda x: int(x), kwargs['ids'].strip().split(' '))),
+                kwargs['path'],
             )
 
         # Send messages to all registrants
@@ -246,7 +249,7 @@ def send_messages(**kwargs):
                 )
             except TimeoutException:  # if chat with participant couldn't be loaded in 30 seconds
                 print("chat could not be loaded for", name)
-                messages_not_sent_to.append(name)  # append name to list of failures
+                messages_not_sent_to.append(name + " : " + num)  # append name to list of failures
 
         # Close browser
         browser[kwargs['username']].close()
