@@ -53,7 +53,7 @@ def start_web_session():
     return driver, qr  # returning the driver object and qr
 
 
-def wait_till_login(driver):
+def wait_till_login(driver: WhatsAPIDriver):
     # wait till user is logged into whatsapp web
     login_status = False
     while not login_status:
@@ -77,7 +77,7 @@ def send_message(num: int, name: str, msg: str, driver: WhatsAPIDriver):
 
     print(f"{name} : https://api.whatsapp.com/send?phone=91{num}")
 
-    chat = driver.get_chat_from_phone_number("91" + str(num), createIfNotFound=True)  # get chat with user
+    chat = driver.get_chat_from_phone_number(str(num), createIfNotFound=True)  # get chat with user
     chat.send_message(msg)  # send message
 
     sleep(2)  # Just so that we can supervise, otherwise it's too fast

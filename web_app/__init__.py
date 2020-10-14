@@ -102,9 +102,7 @@ def submit_form():
 
     if 'whatsapp' in request.form:  # whatsapp messages are to be sent
         # set info as session variables since they need to be accessed later, and are different for each session
-        session['msg'] = list(
-            map(lambda x: x.replace("\\n", "\n"), request.form['content'].split('\n'))
-        )  # split the message by new lines
+        session['msg'] = request.form['content']
         session['table'] = request.form['table']  # the event table whose participants are to be contacted
         session['ids'] = request.form['ids']  # the ids (space separated) who are to be contacted
         return render_template('loading.html', target='/qr')  # show loading page while selenium opens whatsapp web
@@ -190,7 +188,7 @@ def qr():
 @app.route('/send', methods=['POST', 'GET'])
 def send():
     # wait till user is logged into whatsapp
-    meow.wait_till_login(driver[[session['username']]])
+    meow.wait_till_login(driver[session['username']])
     print(session['username'], "logged into whatsapp")
 
     # start thread that will send messages on whatsapp
@@ -224,8 +222,9 @@ def send_messages(**kwargs):
             try:
                 # send message to number, and then append name + whatsapp api link to list of successes
                 messages_sent_to.append(meow.send_message(num, name, kwargs['msg'], driver[kwargs['username']]))
-            except:  # if chat with participant couldn't be loaded in 30 seconds
+            except Exception as e:  # if some error occured
                 print("Message could not be sent to", name)
+                print(e)
                 messages_not_sent_to.append(name)  # append name to list of failures
 
     except:  # for general exceptions
