@@ -1,21 +1,21 @@
 import os
 import traceback
 from base64 import b64encode as bs
-from collections import OrderedDict
 from os.path import join
 from threading import Thread
 from uuid import uuid4
 
 from decouple import config
 from flask import Flask, render_template, session, request, url_for, redirect
-from requests import get, post
+from pandas import read_csv
+from requests import post
 
 from web_app import whatsapp as meow
 from web_app.telegram import TG
 
 # create flask app and set a secret key for it to use to hash session variables
 app = Flask(__name__)
-app.secret_key = 'messenger_of_the_gods'
+app.secret_key = config('secret')
 
 # dictionary to store all the webdriver objects created in each session
 driver = {}
@@ -75,17 +75,15 @@ def login():
         return render_template('begone.html')  # error page
 
 
-# display message details form
 @login_required
 @app.route('/form')
 def form(msg=None):
-    # get all events accessible by the user, order in ascending value of event name
-    events = OrderedDict(
-        sorted(get(url=config('events-api'), headers=session['headers']).json().items(), key=lambda x: x[1])
-    )
-
-    # events is the list of all the events that the currently logged in user can access
-    return render_template('form.html', events=events, msg=msg)
+    """
+    display message details form
+    :param msg: Message to be displayed as an alert on the page
+    :return: rendered HTML page of the form
+    """
+    return render_template('form.html', msg=msg)
 
 
 # display loading page while sending messages
@@ -100,10 +98,9 @@ def submit_form():
         filename = None
 
     # set info as session variables since they need to be accessed later, and are different for each session
-    session['msg'] = request.form['content']
-    session['table'] = request.form['table']  # the event table whose participants are to be contacted
     session['file'] = filename  # path to local csv containing participants' data
     session['ids'] = request.form['ids']  # the ids (space separated) who are to be contacted
+    session['msg'] = request.form['content']
 
     return render_template('loading.html', target='/qr')  # show loading page while selenium opens whatsapp web
 
@@ -142,33 +139,43 @@ def send():
     return form("Sending Messages!")
 
 
-# send messages on whatsapp
-def send_messages(msg, table, file, ids, headers, username, **kwargs):
+def send_messages(msg, file, ids, username, **kwargs):
+    """
+    send messages on whatsapp
+    :param msg: The content to be sent as a message
+    :param file: path to the CSV file with details
+    :param ids: which IDs from that CSV are to be used
+    :param username: session ID
+    :param kwargs: to handle everything else we're getting by dumping session
+    """
     messages_sent_to = []  # list to store successes
     messages_not_sent_to = []  # list to store failures
 
     try:
-        # Get data from our API
-        # get_data() returns two lists - first containing names and second containing numbers
-        if ids == 'all':
-            names, numbers = meow.get_data(config('table-api'), table, headers, 'all', file)
-        else:
-            names, numbers = meow.get_data(
-                config('table-api'), table, headers, list(map(lambda x: int(x), ids.strip().split(' '))), file
-            )
+        # Get data from our uploaded CSV
+        api_data = read_csv(file).to_dict(orient='records')
+        os.remove(file)  # no need of csv anymore
+
+        # select data of only those participants whose id is in the list of ids given as argument
+        if ids != 'all':
+            api_data = [user for user in api_data if user['id'] in [int(x) for x in ids.strip().split(' ')]]
 
         # Send messages to all registrants
-        for num, name in zip(numbers, names):
+        for entry in api_data:
             try:
-                print(f"{name} : https://api.whatsapp.com/send?phone=91{num}")
-                # send message to number, and then append name + whatsapp api link to list of successes
-                meow.send_message(num, name, msg, driver[username])
-                messages_sent_to.append(f"{name} : https://api.whatsapp.com/send?phone=91{num}")
+                print(f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone=91{entry['phone']}")
+                # send message to entry['phone']ber, and then append entry['name'] + whatsapp api link to list of successes
+                meow.send_message(entry['phone'], msg, driver[username])
+                messages_sent_to.append(
+                    f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone=91{entry['phone']}"
+                )
             except Exception as e:  # if some error occured
-                print("Message could not be sent to", name)
+                print("Message could not be sent to", entry['name'])
                 print(e)
-                # append name to list of failures
-                messages_not_sent_to.append(f"{name} : https://api.whatsapp.com/send?phone=91{num}")
+                # append entry['name'] to list of failures
+                messages_not_sent_to.append(
+                    f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone=91{entry['phone']}"
+                )
 
     except:  # for general exceptions
         traceback.print_exc()
