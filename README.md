@@ -25,3 +25,10 @@ A basic setup script is included in the repo, that allows the application to fun
 - Select WhatsApp and/or E-Mail options
 - Click on send
 - Scan QR code from WhatsApp mobile _if sending WhatsApp messages_
+
+# Note
+
+Remove the following dependencies if you find them in requirements.py
+```
+cffi-1.14.3 cryptography-3.1.1 protobuf-3.13.0 pycparser-2.20 python-axolotl-0.2.3 python-axolotl-curve25519-0.4.1.post2 python-dateutil-2.8.1 six-1.15.0 webwhatsapi-2.0.5
+```

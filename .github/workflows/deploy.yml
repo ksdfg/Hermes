@@ -1,11 +1,13 @@
-name: Hermes Deploy
-on: push
+name: check-black-formatting
+on: [pull_request, push]
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
-    env:
-        SSH_KEY: ${{ secrets.SSH_KEY }}
-        SERVER_IP: ${{ secrets.SERVER_IP }}
     steps:
+    - uses: actions/setup-python@master
+      with:
+        python-version: 3.8.3
     - uses: actions/checkout@master
-    - run: bash shell_scripts/deploy.sh
+    - run: |
+          pip install -r requirements.txt
+          black --check .
