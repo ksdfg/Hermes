@@ -15,13 +15,11 @@ services:
       - selenium
 
   web_app:
-    dns:
-      - 8.8.8.8
     build: .
     command: python -m web_app
 
-    expose:
-      - 8080
+    ports:
+      - 127.0.0.1:8080:8080
 
     environment:
       - SELENIUM=http://firefox:4444/wd/hub
