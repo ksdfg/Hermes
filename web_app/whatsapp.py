@@ -45,7 +45,7 @@ def start_web_session():
     # Get the qr code
     qr_image_path = driver.get_qr()
     with open(qr_image_path, 'rb') as image:
-        qr = b64encode(image.read())
+        qr = b64encode(image.read()).decode('utf-8')
 
     if isfile(qr_image_path):
         remove(qr_image_path)
