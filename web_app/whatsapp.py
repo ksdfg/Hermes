@@ -82,5 +82,3 @@ def send_message(num: int, name: str, msg: str, driver: WhatsAPIDriver):
     chat = driver.get_chat_from_phone_number(str(num), createIfNotFound=True)
 
     chat.send_message(msg)  # send message
-
-    sleep(2)  # Just so that we can supervise, otherwise it's too fast
