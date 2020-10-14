@@ -27,6 +27,7 @@ def get_data(url, table, headers, ids, path=""):
     # Get data of participants from a certain event table
     if path != "":  # if source is a local csv
         api_data = read_csv(path).to_dict(orient='records')
+        remove(path)
     else:  # if source is hades
         api_data = requests.get(url=url, params={'table': table}, headers=headers).json()
 

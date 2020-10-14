@@ -2,7 +2,9 @@ import os
 import traceback
 from base64 import b64encode as bs
 from collections import OrderedDict
+from os.path import join
 from threading import Thread
+from uuid import uuid4
 
 from decouple import config
 from flask import Flask, render_template, session, request, url_for, redirect
@@ -90,10 +92,17 @@ def form(msg=None):
 @login_required
 @app.route('/submit', methods=['POST'])
 def submit_form():
+    # save uploaded file locally
+    if request.files['file'] and request.files['file'].filename != "":
+        filename = f"{uuid4()}.csv"
+        request.files['file'].save(join("/Hermes", filename))
+    else:
+        filename = None
+
     # set info as session variables since they need to be accessed later, and are different for each session
     session['msg'] = request.form['content']
     session['table'] = request.form['table']  # the event table whose participants are to be contacted
-    session['path'] = request.form['path']  # path to local csv containing participants' data
+    session['file'] = filename  # path to local csv containing participants' data
     session['ids'] = request.form['ids']  # the ids (space separated) who are to be contacted
 
     return render_template('loading.html', target='/qr')  # show loading page while selenium opens whatsapp web
@@ -134,24 +143,18 @@ def send():
 
 
 # send messages on whatsapp
-def send_messages(**kwargs):
+def send_messages(msg, table, file, ids, headers, username, **kwargs):
     messages_sent_to = []  # list to store successes
     messages_not_sent_to = []  # list to store failures
 
     try:
         # Get data from our API
         # get_data() returns two lists - first containing names and second containing numbers
-        if kwargs['ids'] == 'all':
-            names, numbers = meow.get_data(
-                config('table-api'), kwargs['table'], kwargs['headers'], 'all', kwargs['path']
-            )
+        if ids == 'all':
+            names, numbers = meow.get_data(config('table-api'), table, headers, 'all', file)
         else:
             names, numbers = meow.get_data(
-                config('table-api'),
-                kwargs['table'],
-                kwargs['headers'],
-                list(map(lambda x: int(x), kwargs['ids'].strip().split(' '))),
-                kwargs['path'],
+                config('table-api'), table, headers, list(map(lambda x: int(x), ids.strip().split(' '))), file
             )
 
         # Send messages to all registrants
@@ -159,7 +162,7 @@ def send_messages(**kwargs):
             try:
                 print(f"{name} : https://api.whatsapp.com/send?phone=91{num}")
                 # send message to number, and then append name + whatsapp api link to list of successes
-                meow.send_message(num, name, kwargs['msg'], driver[kwargs['username']])
+                meow.send_message(num, name, msg, driver[username])
                 messages_sent_to.append(f"{name} : https://api.whatsapp.com/send?phone=91{num}")
             except Exception as e:  # if some error occured
                 print("Message could not be sent to", name)
@@ -172,8 +175,8 @@ def send_messages(**kwargs):
 
     finally:
         # Close driver
-        driver[kwargs['username']].quit()
-        print('closed driver for ' + kwargs['username'])
+        driver[username].quit()
+        print("closed driver for", username)
 
         # write all successes and failures to a file
         newline = "\n"
@@ -187,9 +190,9 @@ def send_messages(**kwargs):
         tg.send_chat_action(config('log_channel'), 'upload document')
         log(
             f"List of people who received and didn't receive WhatsApp messages during run by user "
-            f"<code>{kwargs['username']}</code>",
+            f"<code>{username}</code>",
             "whatsapp_list.txt",
         )
         os.remove('whatsapp_list.txt')  # no need for file once it is sent, delete from server
 
-        print(kwargs['username'], "done sending messages!")
+        print(username, "done sending messages!")

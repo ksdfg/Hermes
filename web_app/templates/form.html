@@ -4,7 +4,7 @@
 
 {% block page_content %}
     <div class="center" style="max-width: 800px">
-        <form class="form" method="post" action="/submit">
+        <form class="form" enctype="multipart/form-data" method="post" action="/submit">
 
             <label for="table" class="sr-only"></label>
             <p>
@@ -18,10 +18,9 @@
 
             <h3 style="margin-bottom: 10px">OR</h3>
 
-            <label for="path" class="sr-only"></label>
-            <input type="text" class="form-control center" name="path" id="path"
-                   placeholder="Enter the path to the csv file containing recipient details"
-                   style="width: 70%">
+            <label for="file" class="sr-only"></label>
+            <input type="file" class="form-control center" name="file" id="file"
+                   style="width: 70%" accept=".csv">
 
             <hr>
 
