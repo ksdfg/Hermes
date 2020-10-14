@@ -1,21 +1,11 @@
 from base64 import b64encode
+from os import remove
+from os.path import isfile
 from time import sleep
 
 import requests
 from decouple import config
-from selenium import webdriver
 from webwhatsapi import WhatsAPIDriver
-
-
-def wait_till_login(driver):
-    # wait till user is logged into whatsapp web
-    login_status = False
-    while not login_status:
-        print("Wait for login...")
-        try:
-            login_status = driver.wait_for_login()
-        except:
-            continue
 
 
 # get all data of all participants from GET call to passed url
@@ -57,7 +47,21 @@ def start_web_session():
     with open(qr_image_path, 'rb') as image:
         qr = b64encode(image.read())
 
+    if isfile(qr_image_path):
+        remove(qr_image_path)
+
     return driver, qr  # returning the driver object and qr
+
+
+def wait_till_login(driver):
+    # wait till user is logged into whatsapp web
+    login_status = False
+    while not login_status:
+        print("Wait for login...")
+        try:
+            login_status = driver.wait_for_login()
+        except:
+            continue
 
 
 # Method to send a message to someone
