@@ -220,12 +220,15 @@ def send_messages(**kwargs):
         # Send messages to all registrants
         for num, name in zip(numbers, names):
             try:
+                print(f"{name} : https://api.whatsapp.com/send?phone=91{num}")
                 # send message to number, and then append name + whatsapp api link to list of successes
-                messages_sent_to.append(meow.send_message(num, name, kwargs['msg'], driver[kwargs['username']]))
+                meow.send_message(num, name, kwargs['msg'], driver[kwargs['username']])
+                messages_sent_to.append(f"{name} : https://api.whatsapp.com/send?phone=91{num}")
             except Exception as e:  # if some error occured
                 print("Message could not be sent to", name)
                 print(e)
-                messages_not_sent_to.append(name)  # append name to list of failures
+                # append name to list of failures
+                messages_not_sent_to.append(f"{name} : https://api.whatsapp.com/send?phone=91{num}")
 
     except:  # for general exceptions
         traceback.print_exc()

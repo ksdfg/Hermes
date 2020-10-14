@@ -5,7 +5,7 @@ from time import sleep
 
 import requests
 from decouple import config
-from webwhatsapi import WhatsAPIDriver
+from webwhatsapi import WhatsAPIDriver, ChatNotFoundError
 
 
 # get all data of all participants from GET call to passed url
@@ -74,12 +74,13 @@ def send_message(num: int, name: str, msg: str, driver: WhatsAPIDriver):
     :param driver: WhatsApidDiver object using which whatsapp web is to be operated
     :return: string with name and link to chat
     """
+    #
+    if len(str(num)) == 10:
+        num = "91" + str(num)
 
-    print(f"{name} : https://api.whatsapp.com/send?phone=91{num}")
+    # get chat with user
+    chat = driver.get_chat_from_phone_number(str(num), createIfNotFound=True)
 
-    chat = driver.get_chat_from_phone_number(str(num), createIfNotFound=True)  # get chat with user
     chat.send_message(msg)  # send message
 
     sleep(2)  # Just so that we can supervise, otherwise it's too fast
-
-    return f"{name} : https://api.whatsapp.com/send?phone=91{num}"
