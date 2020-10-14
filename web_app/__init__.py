@@ -1,15 +1,12 @@
-import json
 import os
 import traceback
 from base64 import b64encode as bs
 from collections import OrderedDict
 from threading import Thread
 
-import yaml
 from decouple import config
 from flask import Flask, render_template, session, request, url_for, redirect
 from requests import get, post
-from selenium.common.exceptions import TimeoutException
 
 from web_app import whatsapp as meow
 from web_app.telegram import TG
@@ -19,33 +16,18 @@ app = Flask(__name__)
 app.secret_key = 'messenger_of_the_gods'
 
 # dictionary to store all the webdriver objects created in each session
-browser = {}
+driver = {}
 
-# Get config data from json
-data = {}
-try:
-    data['table-api'] = config('table-api')
-    data['events-api'] = config('events-api')
-    data['login-api'] = config('login-api')
-    data['email-api'] = config('email-api')
-    data['browser'] = config('browser')
-    data['driver-path'] = config('driver-path')
-    data['log_channel'] = config('log_channel')
-    data['telebot_api_key'] = config('telebot_api_key')
-except Exception as e:
-    print(e)
-    exit(1)
-
-tg = TG(data['telebot_api_key'])  # Object used to log data to telegram
+tg = TG(config('telebot_api_key'))  # Object used to log data to telegram
 
 
 # Log messages to tg channel
 def log(message, doc=None):
     # If a document has been passed to log function, send it with send_document function
     if doc is None:
-        tg.send_message(data['log_channel'], f"<b>Hermes</b>:\n{message}")
+        tg.send_message(config('log_channel'), f"<b>Hermes</b>:\n{message}")
     else:
-        tg.send_document(data['log_channel'], f"<b>Hermes</b>:\n{message}", doc)
+        tg.send_document(config('log_channel'), f"<b>Hermes</b>:\n{message}", doc)
 
 
 # Wrapper - only execute function if user is logged in
@@ -76,7 +58,7 @@ def login():
     }
 
     # POST call to `login-api` essentially returns status code 200 only if credentials are valid
-    if post(url=data['login-api'], headers=headers, allow_redirects=False).status_code == 200:
+    if post(url=config('login-api'), headers=headers, allow_redirects=False).status_code == 200:
         # set session variables - username and the header that were verified in above POST call
         session['username'] = request.form['username']  # username
         session['headers'] = headers  # header stored for use in further API calls
@@ -97,7 +79,7 @@ def login():
 def form(msg=None):
     # get all events accessible by the user, order in ascending value of event name
     events = OrderedDict(
-        sorted(get(url=data['events-api'], headers=session['headers']).json().items(), key=lambda x: x[1])
+        sorted(get(url=config('events-api'), headers=session['headers']).json().items(), key=lambda x: x[1])
     )
 
     # events is the list of all the events that the currently logged in user can access
@@ -136,17 +118,17 @@ def submit_form():
 def send_mail(**kwargs):
     # POST call to `email-api` which makes Hades use sendgrid API to send emails to all participants whose id is listed
     # Subject and content of mail retrieved from HTML form and passed to this function as items in kwargs
-    response = post(url=data['email-api'], data=kwargs, headers=kwargs['headers'])
+    response = post(url=config('email-api'), data=kwargs, headers=kwargs['headers'])
 
     # Get data from our API
     # get_data() returns two lists - first containing names and second containing numbers
     if kwargs['ids'] == 'all':  # retrieve names and numbers of all participants
-        names = meow.get_data(data['table-api'], kwargs['table'], kwargs['headers'], 'all')[0]
+        names = meow.get_data(config('table-api'), kwargs['table'], kwargs['headers'], 'all')[0]
     else:  # retrieve names and numbers of participants whose id was listed by user
         # since ids are retrieved from form as a space separated string
         # split the string by space and convert all resultant list items to int
         names = meow.get_data(
-            data['table-api'],
+            config('table-api'),
             kwargs['table'],
             kwargs['headers'],
             list(map(lambda x: int(x), kwargs['ids'].split(' '))),
@@ -159,7 +141,7 @@ def send_mail(**kwargs):
             file.write(f"E-Mails sent to :\n{newline.join(names)}")
 
         # log list of recipients to telegram channel
-        tg.send_chat_action(data['log_channel'], 'upload document')
+        tg.send_chat_action(config('log_channel'), 'upload document')
         log(
             f"List of people who received E-Mails during run by user <code>{kwargs['username']}</code>",
             "sendgrid_list.txt",
@@ -175,7 +157,7 @@ def send_mail(**kwargs):
             file.write(f"E-Mails could not sent to :\n{newline.join(names)}")
 
         # log list of recipients to telegram channel
-        tg.send_chat_action(data['log_channel'], 'upload document')
+        tg.send_chat_action(config('log_channel'), 'upload document')
         log(
             f"List of people who could not received E-Mails during run by user <code>{kwargs['username']}</code>",
             "sendgrid_list.txt",
@@ -192,11 +174,11 @@ def qr():
     # create a webdriver object, open whatsapp web in the resultant browser and
     # display QR code on client side for user to scan
 
-    print('started driver session for ' + session['username'])  # logging to server terminal
+    print('starting driver session for ' + session['username'])  # logging to server terminal
 
-    # store the created webdriver object in browser dict
+    # store the created webdriver object in driver dict
     # key - username of currently logged in user | value - webdriver object
-    browser[session['username']], qr_img = meow.start_web_session(data['browser'], data['driver-path'])
+    driver[session['username']], qr_img = meow.start_web_session()
 
     # the rendered HTML form, qr.html, automatically redirects to /send, which will load only once QR code is scanned,
     # the user is logged into whatsapp web and Hermes starts sending messages on whatsapp
@@ -207,8 +189,8 @@ def qr():
 @login_required
 @app.route('/send', methods=['POST', 'GET'])
 def send():
-    # wait till the chat search box is loaded, so you know you're logged into whatsapp web
-    meow.wait_till_element_loaded(browser[session['username']], '/html/body/div[1]/div/div/div[3]/div/div[1]/div')
+    # wait till user is logged into whatsapp
+    meow.wait_till_login(driver[[session['username']]])
     print(session['username'], "logged into whatsapp")
 
     # start thread that will send messages on whatsapp
@@ -228,10 +210,10 @@ def send_messages(**kwargs):
         # Get data from our API
         # get_data() returns two lists - first containing names and second containing numbers
         if kwargs['ids'] == 'all':
-            names, numbers = meow.get_data(data['table-api'], kwargs['table'], kwargs['headers'], 'all')
+            names, numbers = meow.get_data(config('table-api'), kwargs['table'], kwargs['headers'], 'all')
         else:
             names, numbers = meow.get_data(
-                data['table-api'],
+                config('table-api'),
                 kwargs['table'],
                 kwargs['headers'],
                 list(map(lambda x: int(x), kwargs['ids'].strip().split(' '))),
@@ -241,21 +223,19 @@ def send_messages(**kwargs):
         for num, name in zip(numbers, names):
             try:
                 # send message to number, and then append name + whatsapp api link to list of successes
-                messages_sent_to.append(
-                    meow.send_message(num, name, kwargs['msg'], browser[kwargs['username']], time=30)
-                )
-            except TimeoutException:  # if chat with participant couldn't be loaded in 30 seconds
-                print("chat could not be loaded for", name)
+                messages_sent_to.append(meow.send_message(num, name, kwargs['msg'], driver[kwargs['username']]))
+            except:  # if chat with participant couldn't be loaded in 30 seconds
+                print("Message could not be sent to", name)
                 messages_not_sent_to.append(name)  # append name to list of failures
-
-        # Close browser
-        browser[kwargs['username']].close()
-        print('closed driver for ' + kwargs['username'])
 
     except:  # for general exceptions
         traceback.print_exc()
 
     finally:
+        # Close driver
+        driver[kwargs['username']].quit()
+        print('closed driver for ' + kwargs['username'])
+
         # write all successes and failures to a file
         newline = "\n"
         with open('whatsapp_list.txt', 'w') as file:
@@ -265,7 +245,7 @@ def send_messages(**kwargs):
             )
 
         # log file of all successes and failures to telegram channel
-        tg.send_chat_action(data['log_channel'], 'upload document')
+        tg.send_chat_action(config('log_channel'), 'upload document')
         log(
             f"List of people who received and didn't receive WhatsApp messages during run by user "
             f"<code>{kwargs['username']}</code>",
