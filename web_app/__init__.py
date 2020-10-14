@@ -90,81 +90,13 @@ def form(msg=None):
 @login_required
 @app.route('/submit', methods=['POST'])
 def submit_form():
-    if 'whatsapp' not in request.form and 'sendgrid' not in request.form:  # neither option was selected
-        return render_template('begone.html')
+    # set info as session variables since they need to be accessed later, and are different for each session
+    session['msg'] = request.form['content']
+    session['table'] = request.form['table']  # the event table whose participants are to be contacted
+    session['path'] = request.form['path']  # path to local csv containing participants' data
+    session['ids'] = request.form['ids']  # the ids (space separated) who are to be contacted
 
-    if 'sendgrid' in request.form:  # emails are to be sent
-        # set kwargs in a separate dict, since threaded function cannot access session or request objects
-        params = dict(request.form)
-        params['headers'] = session['headers']  # base64 encoded credentials of currently logged in user
-        params['username'] = session['username']  # username of currently logged in user
-        Thread(target=send_mail, kwargs=params).start()  # start procedure in a parallel thread
-
-    if 'whatsapp' in request.form:  # whatsapp messages are to be sent
-        # set info as session variables since they need to be accessed later, and are different for each session
-        session['msg'] = request.form['content']
-        session['table'] = request.form['table']  # the event table whose participants are to be contacted
-        session['path'] = request.form['path']  # path to local csv containing participants' data
-        session['ids'] = request.form['ids']  # the ids (space separated) who are to be contacted
-        return render_template('loading.html', target='/qr')  # show loading page while selenium opens whatsapp web
-
-    # if whatsapp messages are not to be sent, go back to form with a success message
-    # events is the list of all the events that the currently logged in user can access
-    return form(msg="Sending Messages")
-
-
-# send emails
-def send_mail(**kwargs):
-    # POST call to `email-api` which makes Hades use sendgrid API to send emails to all participants whose id is listed
-    # Subject and content of mail retrieved from HTML form and passed to this function as items in kwargs
-    response = post(url=config('email-api'), data=kwargs, headers=kwargs['headers'])
-
-    # Get data from our API
-    # get_data() returns two lists - first containing names and second containing numbers
-    if kwargs['ids'] == 'all':  # retrieve names and numbers of all participants
-        names = meow.get_data(config('table-api'), kwargs['table'], kwargs['headers'], 'all')[0]
-    else:  # retrieve names and numbers of participants whose id was listed by user
-        # since ids are retrieved from form as a space separated string
-        # split the string by space and convert all resultant list items to int
-        names = meow.get_data(
-            config('table-api'),
-            kwargs['table'],
-            kwargs['headers'],
-            list(map(lambda x: int(x), kwargs['ids'].split(' '))),
-            kwargs['path'],
-        )[0]
-
-    if response.status_code == 200:
-        # write names of recipients to a file
-        newline = '\n'
-        with open('sendgrid_list.txt', 'w') as file:
-            file.write(f"E-Mails sent to :\n{newline.join(names)}")
-
-        # log list of recipients to telegram channel
-        tg.send_chat_action(config('log_channel'), 'upload document')
-        log(
-            f"List of people who received E-Mails during run by user <code>{kwargs['username']}</code>",
-            "sendgrid_list.txt",
-        )
-        os.remove('sendgrid_list.txt')  # no need for file once it is sent, delete from server
-
-        print(kwargs['username'], "Done sending e-mails")
-
-    else:
-        # write names of recipients to a file
-        newline = '\n'
-        with open('sendgrid_list.txt', 'w') as file:
-            file.write(f"E-Mails could not sent to :\n{newline.join(names)}")
-
-        # log list of recipients to telegram channel
-        tg.send_chat_action(config('log_channel'), 'upload document')
-        log(
-            f"List of people who could not received E-Mails during run by user <code>{kwargs['username']}</code>",
-            "sendgrid_list.txt",
-        )
-        os.remove('sendgrid_list.txt')  # no need for file once it is sent, delete from server
-
-        print(kwargs['username'], "failed in sending e-mails")
+    return render_template('loading.html', target='/qr')  # show loading page while selenium opens whatsapp web
 
 
 # display qr code to scan
