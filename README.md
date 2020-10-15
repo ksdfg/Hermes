@@ -6,7 +6,7 @@ Web application for sending WhatsApp messages to multiple people at once.
 
 - Set a `secret` as an environment variable, or set in a `.env`.
 
-- Run `docker-compose up` to build and start the application.
+- Run `docker-compose up --build` to build and start the application.
 
 - The application will be running at `localhost:8080`.
 
