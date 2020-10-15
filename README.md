@@ -1,34 +1,41 @@
-# Hermes - TSG Communication Application
+# ![](web_app/static/images/logo.png)
 
-Web application for The SCRIPT Group to use for sending WhatsApp messages and E-Mails to a set of event registrants at once
+Web application for sending WhatsApp messages to multiple people at once.
 
-This requires 5 configuration variables set in a JSON file (`data.json`) or a YAML file (`config.yml`) in the home directory :<br/>
-`browser` - Browser you want selenium to use. Currently configured only for Google Chrome (chrome) and Mozilla Firefox (firefox)<br/>
-`driver-path` - Path to your chromedriver/geckodriver executable<br/>
-`login-api` - API URL to verify user login credentials<br/>
-`table-api` - API URL to get the list of participants<br/>
-`events-api` - API URL to get the list of events<br/>
-`email-api` - API URL to send emails to registrants using Sendgrid API from hades<br/>
-`log_channel` - Telegram channel ID where activity logs are sent<br/>
-`telebot_api_key` - API Key of bot used to send activity logs to Telegram<br/>
+## To setup and run the application
 
-A basic setup script is included in the repo, that allows the application to function perfectly on Ubuntu 18.04+
+- Set a `secret` as an environment variable, or set in a `.env`.
+
+- Run `docker-compose up` to build and start the application.
+
+- The application will be running at `localhost:8080`.
 
 ## To send messages
-- Login with your `tsg id`
-- Select event from list of events
-- Enter ids to send message to, separated by a space / enter `all` to send to all registrants
-- Enter subject _if sending mail_
-- Enter message
-    - For E-Mails, the message is to be written as HTML content
-    - For WhatsApp, write as you would in mobile app. Write `\n` whenever you want to send a new message.
-- Select WhatsApp and/or E-Mail options
-- Click on send
-- Scan QR code from WhatsApp mobile _if sending WhatsApp messages_
 
-# Note
+- Click on the __Start__ button to go to the form.
 
-Remove the following dependencies if you find them in requirements.py
-```
-cffi-1.14.3 cryptography-3.1.1 protobuf-3.13.0 pycparser-2.20 python-axolotl-0.2.3 python-axolotl-curve25519-0.4.1.post2 python-dateutil-2.8.1 six-1.15.0 webwhatsapi-2.0.5
-```
+- Fill the form according to the following rules
+
+  - Enter a number to which a list of people who got the message and a 
+  list of people who couldn't get the message will be sent. The number must
+  be include the country code without the `+`. For example, if your number
+  is `987654321` and you're from India (`+91`), then enter `91987654321`.
+  
+  - Upload a __CSV__ file with three columns
+  
+    - `id`, which contains a numeric id unique for each entry.
+    
+    - `name`, which contains the name of the person.
+    
+    - `phone`, which contains the number to which the message should be sent.
+    Follow the same format as the logging phone number.
+    
+  - Enter which IDs from the CSV you want to send the message to. You can
+  either enter the IDs space separated, or just enter `all` to send to all.
+  
+  - Enter the message you want to send. You can use `{{name}}` as a placeholder
+  which will be replaced by the name in the CSV.
+  
+- Wait for the QR to load on the screen. Once it loads, scan the QR from your
+ohone. The application will wait till you're logged in, and then start sending
+the messages in the background.
