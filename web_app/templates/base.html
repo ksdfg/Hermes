@@ -23,7 +23,7 @@
 
 <body class="text-center" onload={% block onload %}""{% endblock %}>
 <div class="container">
-    <img class="mb-4" src="https://hermes-router.github.io/_static/hermes_logo_w.png" alt="" height="40%" width="40%">
+    <img class="mb-4" src="{{ url_for(endpoint='static', filename='images/logo.png') }}" alt="">
     <br><br>
     {% block page_content %}
     {% endblock %}
