@@ -163,7 +163,7 @@ def send_messages(content, file, ids, username, log_phone, **kwargs):
             try:
                 print(f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone=91{entry['phone']}")
                 # send message to entry['phone']ber, and then append entry['name'] + whatsapp api link to list of successes
-                meow.send_message(entry['phone'], content, driver[username])
+                meow.send_message(entry['phone'], content.replace("{{name}}", entry['name']), driver[username])
                 messages_sent_to.append(
                     f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone=91{entry['phone']}"
                 )
