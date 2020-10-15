@@ -5,7 +5,21 @@ from typing import Tuple
 
 from decouple import config
 
-from webwhatsapi import WhatsAPIDriver
+from webwhatsapi import WhatsAPIDriver, ChatNotFoundError
+
+
+def check_if_number_exists(driver: WhatsAPIDriver, number: str) -> bool:
+    """
+    Function to check if a number exists on WhatsApp
+    :param driver: driver object used for checking
+    :param number: The number to check
+    :return: True if the number exists, else false
+    """
+    try:
+        driver.get_chat_from_phone_number(number, createIfNotFound=True)
+        return True
+    except ChatNotFoundError:
+        return False
 
 
 def start_web_session() -> Tuple[WhatsAPIDriver, str]:
