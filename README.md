@@ -1,5 +1,12 @@
 # ![](web_app/static/images/logo.png)
-[![Website cv.lbesson.qc.to](https://img.shields.io/website-up-down-green-red/http/hermes.ksdfg.me.svg)](https://hermes.ksdfg.me/) [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://www.github.com/ksdfg/Hermes/graphs/commit-activity) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) [![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://www.github.com/ksdfg/Hermes/blob/master/LICENSE)
+
+[![Website hermes.ksdfg.me](https://img.shields.io/website-up-down-green-red/http/hermes.ksdfg.me.svg)](https://hermes.ksdfg.me/)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://www.github.com/ksdfg/Hermes/graphs/commit-activity)
+![GitHub last commit](https://img.shields.io/github/last-commit/ksdfg/hermes)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+![GitHub pull requests](https://img.shields.io/github/issues-pr-raw/ksdfg/hermes)
+![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed-raw/ksdfg/hermes)
+![GitHub](https://img.shields.io/github/license/ksdfg/hermes)
 
 Web application for sending WhatsApp messages to multiple people at once.
 
