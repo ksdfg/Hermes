@@ -1,14 +1,14 @@
 import os
 import traceback
-from base64 import b64encode as bs
+from functools import wraps
 from os.path import join
 from threading import Thread
 from uuid import uuid4
 
 from decouple import config
-from flask import Flask, render_template, session, request, url_for, redirect
+from flask import Flask, render_template, session, request
+from namesgenerator import get_random_name
 from pandas import read_csv
-from requests import post
 
 from web_app import whatsapp as meow
 from web_app.telegram import TG
@@ -32,64 +32,60 @@ def log(message, doc=None):
         tg.send_document(config('log_channel'), f"<b>Hermes</b>:\n{message}", doc)
 
 
-# Wrapper - only execute function if user is logged in
-def login_required(func):
+def endpoint(func):
+    """
+    Execute all the code in a safe environment, and tell demons to begone on error
+    :param func: The function mapped to the route
+    :return: decorated function
+    """
+
+    @wraps(func)
     def inner(*args, **kwargs):
-        if 'username' in session:  # Since on login the username is set as a session variable
+        """
+        Try to execute an endpoint function, and return rendered error page on exception raise
+        :param args: Arguments passed to the endpoint function
+        :param kwargs: Keyword Argumentes passed to the endpoint function
+        :return: function executing endpoint function safely
+        """
+        try:
             return func(*args, **kwargs)
-        else:
+        except:
+            traceback.print_exc()
             return render_template('begone.html')  # error page
 
     return inner
 
 
-# Homepage - shows login details
 @app.route('/')
+@endpoint
 def home():
+    """
+    Homepage - shows login details
+    :return: rendered index.html
+    """
     return render_template('index.html')
 
 
-# login user
-@app.route('/login', methods=['POST'])
-def login():
-    # credentials for the API calls needs to be a base-64 encoded string in the format `username|password`
-    # the credentials are sent in the header as value to the key `Credentials`
-    headers = {
-        'Credentials': bs(str(request.form['username'] + '|' + request.form['password']).encode()),
-        'User-Agent': "Hermes/1.0",
-    }
-
-    # POST call to `login-api` essentially returns status code 200 only if credentials are valid
-    if post(url=config('login-api'), headers=headers, allow_redirects=False).status_code == 200:
-        # set session variables - username and the header that were verified in above POST call
-        session['username'] = request.form['username']  # username
-        session['headers'] = headers  # header stored for use in further API calls
-
-        # log info onto terminal and telegram channel
-        print('Logged in ', session['username'])
-        log(f"<code>{session['username']}</code> logged in")
-
-        return redirect(url_for('form'))  # redirect user to form upon login
-
-    else:  # if credentials were determined as invalid by `login-api` POST call - status code returned not 200
-        return render_template('begone.html')  # error page
-
-
-@login_required
 @app.route('/form')
+@endpoint
 def form(msg=None):
     """
     display message details form
     :param msg: Message to be displayed as an alert on the page
     :return: rendered HTML page of the form
     """
+    session['username'] = get_random_name()  # set username for session
+    print(session['username'], "logged in")
     return render_template('form.html', msg=msg)
 
 
-# display loading page while sending messages
-@login_required
 @app.route('/submit', methods=['POST'])
+@endpoint
 def submit_form():
+    """
+    Handle form submission
+    :return: rendered loading page while driver fetches QR code
+    """
     # save uploaded file locally
     if request.files['file'] and request.files['file'].filename != "":
         filename = f"{uuid4()}.csv"
@@ -105,16 +101,16 @@ def submit_form():
     return render_template('loading.html', target='/qr')  # show loading page while selenium opens whatsapp web
 
 
-# display qr code to scan
-@login_required
 @app.route('/qr')
+@endpoint
 def qr():
-    # create a webdriver object, open whatsapp web in the resultant browser and
-    # display QR code on client side for user to scan
-
+    """
+    display QR code to scan
+    :return: rendered web page with the QR code
+    """
     print('starting driver session for ' + session['username'])  # logging to server terminal
 
-    # store the created webdriver object in driver dict
+    # store the created WhatsApiDriver object in driver dict
     # key - username of currently logged in user | value - webdriver object
     driver[session['username']], qr_img = meow.start_web_session()
 
@@ -123,10 +119,13 @@ def qr():
     return render_template('qr.html', qr=qr_img)
 
 
-# start sending messages on whatsapp
-@login_required
 @app.route('/send', methods=['POST', 'GET'])
+@endpoint
 def send():
+    """
+    start sending messages on whatsapp
+    :return: rendered form with the `Sending Messages!` alert
+    """
     # wait till user is logged into whatsapp
     meow.wait_till_login(driver[session['username']])
     print(session['username'], "logged into whatsapp")
@@ -145,7 +144,7 @@ def send_messages(msg, file, ids, username, **kwargs):
     :param msg: The content to be sent as a message
     :param file: path to the CSV file with details
     :param ids: which IDs from that CSV are to be used
-    :param username: session ID
+    :param username: session username
     :param kwargs: to handle everything else we're getting by dumping session
     """
     messages_sent_to = []  # list to store successes
