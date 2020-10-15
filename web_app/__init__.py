@@ -11,7 +11,6 @@ from namesgenerator import get_random_name
 from pandas import read_csv
 
 from web_app import whatsapp as meow
-from web_app.telegram import TG
 
 # create flask app and set a secret key for it to use to hash session variables
 app = Flask(__name__)
@@ -19,17 +18,6 @@ app.secret_key = config('secret')
 
 # dictionary to store all the webdriver objects created in each session
 driver = {}
-
-tg = TG(config('telebot_api_key'))  # Object used to log data to telegram
-
-
-# Log messages to tg channel
-def log(message, doc=None):
-    # If a document has been passed to log function, send it with send_document function
-    if doc is None:
-        tg.send_message(config('log_channel'), f"<b>Hermes</b>:\n{message}")
-    else:
-        tg.send_document(config('log_channel'), f"<b>Hermes</b>:\n{message}", doc)
 
 
 def endpoint(func):
@@ -68,15 +56,14 @@ def home():
 
 @app.route('/form')
 @endpoint
-def form(msg=None):
+def form():
     """
     display message details form
-    :param msg: Message to be displayed as an alert on the page
     :return: rendered HTML page of the form
     """
     session['username'] = get_random_name()  # set username for session
     print(session['username'], "logged in")
-    return render_template('form.html', msg=msg)
+    return render_template('form.html', **session)
 
 
 @app.route('/submit', methods=['POST'])
@@ -87,16 +74,14 @@ def submit_form():
     :return: rendered loading page while driver fetches QR code
     """
     # save uploaded file locally
-    if request.files['file'] and request.files['file'].filename != "":
-        filename = f"{uuid4()}.csv"
-        request.files['file'].save(join("/Hermes", filename))
-    else:
-        filename = None
+    filename = f"{uuid4()}.csv"
+    request.files['file'].save(join("/Hermes", filename))
 
     # set info as session variables since they need to be accessed later, and are different for each session
     session['file'] = filename  # path to local csv containing participants' data
     session['ids'] = request.form['ids']  # the ids (space separated) who are to be contacted
-    session['msg'] = request.form['content']
+    session['log_phone'] = request.form['log_phone']
+    session['content'] = request.form['content']
 
     return render_template('loading.html', target='/qr')  # show loading page while selenium opens whatsapp web
 
@@ -130,18 +115,32 @@ def send():
     meow.wait_till_login(driver[session['username']])
     print(session['username'], "logged into whatsapp")
 
+    # check if log number exists
+    if not meow.check_if_number_exists(driver[session['username']], session['log_phone']):
+        print(session['username'], "gave invalid phone number for logging")
+
+        # Close driver
+        driver[session['username']].close()
+        del driver[session['username']]
+        print("closed driver for", session['username'])
+
+        # go back to form with error message
+        return render_template('form.html', msg="Incorrect number given for logging", **session)
+
     # start thread that will send messages on whatsapp
     Thread(target=send_messages, kwargs=dict(session)).start()
 
     # go back to form with a success message
-    # events is the list of all the events that the currently logged in user can access
-    return form("Sending Messages!")
+    session['username'] = get_random_name()
+    print(session['username'], "logged in")
+    return render_template('form.html', msg="Sending Messages!")
 
 
-def send_messages(msg, file, ids, username, **kwargs):
+def send_messages(content, file, ids, username, log_phone, **kwargs):
     """
     send messages on whatsapp
-    :param msg: The content to be sent as a message
+    :param log_phone: phone number to which results are to be logged
+    :param content: The content to be sent as a message
     :param file: path to the CSV file with details
     :param ids: which IDs from that CSV are to be used
     :param username: session username
@@ -164,7 +163,7 @@ def send_messages(msg, file, ids, username, **kwargs):
             try:
                 print(f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone=91{entry['phone']}")
                 # send message to entry['phone']ber, and then append entry['name'] + whatsapp api link to list of successes
-                meow.send_message(entry['phone'], msg, driver[username])
+                meow.send_message(entry['phone'], content, driver[username])
                 messages_sent_to.append(
                     f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone=91{entry['phone']}"
                 )
@@ -176,29 +175,24 @@ def send_messages(msg, file, ids, username, **kwargs):
                     f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone=91{entry['phone']}"
                 )
 
+        print(username, "done sending messages!")
+
     except:  # for general exceptions
         traceback.print_exc()
 
     finally:
-        # Close driver
-        driver[username].quit()
-        print("closed driver for", username)
-
-        # write all successes and failures to a file
+        # log results
         newline = "\n"
-        with open('whatsapp_list.txt', 'w') as file:
-            file.write(
-                f"Messages sent to :\n{newline.join(messages_sent_to)}\n\n"
-                f"Messages not sent to :\n{newline.join(messages_not_sent_to)}"
-            )
-
-        # log file of all successes and failures to telegram channel
-        tg.send_chat_action(config('log_channel'), 'upload document')
-        log(
-            f"List of people who received and didn't receive WhatsApp messages during run by user "
-            f"<code>{username}</code>",
-            "whatsapp_list.txt",
+        meow.send_message(
+            log_phone,
+            f"*Messages sent to :*\n{newline.join(messages_sent_to)}\n\n*Messages not sent to :*\n{newline.join(messages_not_sent_to)}",
+            driver[username],
         )
-        os.remove('whatsapp_list.txt')  # no need for file once it is sent, delete from server
 
-        print(username, "done sending messages!")
+        # Close driver
+        try:
+            driver[username].close()
+            del driver[username]
+            print("closed driver for", username)
+        except:
+            pass

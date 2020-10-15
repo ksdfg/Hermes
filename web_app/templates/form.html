@@ -5,6 +5,13 @@
 {% block page_content %}
     <div class="center" style="max-width: 800px">
         <form class="form" enctype="multipart/form-data" method="post" action="/submit">
+            <label for="log_phone" class="sr-only"></label>
+            <input type="number" class="form-control center" name="log_phone" id="log_phone" value="{{ log_phone }}"
+                   placeholder="Enter the phone number logs should be sent to, with international code without any symbols"
+                   style="width: 70%" required>
+
+            <hr>
+
             <label for="file" class="sr-only"></label>
             <input type="file" class="form-control center" name="file" id="file"
                    style="width: 70%" accept=".csv" required>
@@ -12,14 +19,14 @@
             <hr>
 
             <label for="ids" class="sr-only"></label>
-            <input type="text" class="form-control center" name="ids" id="ids"
+            <input type="text" class="form-control center" name="ids" id="ids" value="{{ ids }}"
                    placeholder="Enter all the user ids separated by space; just enter 'all' to send to all"
                    style="width: 70%" required>
 
             <label for="content" class="sr-only"></label>
             <textarea class="form-control center" name="content" id="content"
                       placeholder="Type your message here! You can use emojis in your message as well :)"
-                      style="width: 70%" required></textarea>
+                      style="width: 70%" required>{{ content }}</textarea>
 
             <hr>
 
