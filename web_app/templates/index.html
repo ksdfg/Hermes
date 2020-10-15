@@ -1,6 +1,43 @@
 {% extends "base.html" %}
 
 {% block page_content %}
+    <div style="margin-bottom: 5%; margin-top: 5%; text-align: left !important;">
+        <ul>
+            <li><p>Click on the <strong>Start</strong> button to go to the form.</p>
+            </li>
+            <li><p>Fill the form according to the following rules</p>
+                <ul>
+                    <li><p>Enter a number to which a list of people who got the message and a
+                        list of people who couldn&#39;t get the message will be sent. The number must
+                        be include the country code without the <code>+</code>. For example, if your number
+                        is <code>987654321</code> and you&#39;re from India (<code>+91</code>), then enter <code>91987654321</code>.
+                    </p>
+                    </li>
+                    <li><p>Upload a <strong>CSV</strong> file with three columns</p>
+                        <ul>
+                            <li><p><code>id</code>, which contains a numeric id unique for each entry.</p>
+                            </li>
+                            <li><p><code>name</code>, which contains the name of the person.</p>
+                            </li>
+                            <li><p><code>phone</code>, which contains the number to which the message should be sent.
+                                Follow the same format as the logging phone number.</p>
+                            </li>
+                        </ul>
+                    </li>
+                    <li><p>Enter which IDs from the CSV you want to send the message to. You can
+                        either enter the IDs space separated, or just enter <code>all</code> to send to all.</p>
+                    </li>
+                    <li><p>Enter the message you want to send. You can use <code>{{ name }}</code> as a placeholder
+                        which will be replaced by the name in the CSV.</p>
+                    </li>
+                </ul>
+            </li>
+            <li><p>Wait for the QR to load on the screen. Once it loads, scan the QR from your
+                ohone. The application will wait till you&#39;re logged in, and then start sending
+                the messages in the background.</p>
+            </li>
+        </ul>
+    </div>
     <div class="center" style="max-width: 330px">
         <a href="/form">
             <button class="btn btn-lg btn-primary btn-block">Start</button>
