@@ -17,15 +17,10 @@
                        accept=".csv" required>
                 <label class="custom-file-label" style="text-align: left !important;" for="file">Choose file...</label>
 
-                <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
-                        integrity="sha256-4+XzXVhsDmqanXGHaHvgh1gMQKX40OUvDEBTu8JcmNs="
-                        crossorigin="anonymous"></script>
                 <script>
-                    $('#file').on('change', function (e) {
-                        //get the file name
+                    document.getElementById('file').addEventListener('change',(e) => {
                         const fileName = e.target.files[0].name;
-                        //replace the "Choose a file" label
-                        $(this).next('.custom-file-label').html(fileName);
+                        document.getElementsByClassName('custom-file-label')[0].innerHTML=fileName;
                     })
                 </script>
             </div>
