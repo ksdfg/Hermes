@@ -4,6 +4,7 @@ from os.path import isfile
 from typing import Tuple
 
 from decouple import config
+
 from webwhatsapi import WhatsAPIDriver
 
 
