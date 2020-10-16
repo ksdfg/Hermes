@@ -45,5 +45,5 @@ Web application for sending WhatsApp messages to multiple people at once.
   which will be replaced by the name in the CSV.
   
 - Wait for the QR to load on the screen. Once it loads, scan the QR from your
-ohone. The application will wait till you're logged in, and then start sending
+phone. The application will wait till you're logged in, and then start sending
 the messages in the background.
