@@ -10,6 +10,12 @@
 
 Web application for sending WhatsApp messages to multiple people at once.
 
+Built with Flask and [webwhatsapi](https://github.com/mukulhase/WebWhatsapp-Wrapper),
+this is a small web application that allows a user to automate sending a
+message to multiple people (whether they are or aren't in your contacts
+list) with your number. It requires you to scan a QR code from your phone,
+so preferably use it from a desktop / laptop.
+
 ## To setup and run the application
 
 - Set a `secret` as an environment variable, or set in a `.env`.
@@ -29,7 +35,7 @@ Web application for sending WhatsApp messages to multiple people at once.
   be include the country code without the `+`. For example, if your number
   is `987654321` and you're from India (`+91`), then enter `91987654321`.
   
-  - Upload a __CSV__ file with three columns (Don't forget to add the cloumn
+  - Upload a __CSV__ file with three columns (Don't forget to add the column
   headings, which should be exactly as given)
   
     - `id`, which contains a numeric id unique for each entry.
@@ -37,7 +43,8 @@ Web application for sending WhatsApp messages to multiple people at once.
     - `name`, which contains the name of the person.
     
     - `phone`, which contains the number to which the message should be sent.
-    Follow the same format as the logging phone number.
+    Follow the same format as the logging phone number. It's not necessary for the
+    numbers to be in your contacts list or for you to have an existing chat with them.
     
   - Enter which IDs from the CSV you want to send the message to. You can
   either enter the IDs space separated, or just enter `all` to send to all.
