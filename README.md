@@ -29,7 +29,8 @@ Web application for sending WhatsApp messages to multiple people at once.
   be include the country code without the `+`. For example, if your number
   is `987654321` and you're from India (`+91`), then enter `91987654321`.
   
-  - Upload a __CSV__ file with three columns
+  - Upload a __CSV__ file with three columns (Don't forget to add the cloumn
+  headings, which should be exactly as given)
   
     - `id`, which contains a numeric id unique for each entry.
     
