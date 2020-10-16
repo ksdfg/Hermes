@@ -4,9 +4,9 @@
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://www.github.com/ksdfg/Hermes/graphs/commit-activity)
 ![GitHub last commit](https://img.shields.io/github/last-commit/ksdfg/hermes)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
-![GitHub pull requests](https://img.shields.io/github/issues-pr-raw/ksdfg/hermes)
-![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed-raw/ksdfg/hermes)
-![GitHub](https://img.shields.io/github/license/ksdfg/hermes)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr-raw/ksdfg/hermes)](https://github.com/ksdfg/Hermes/pulls?q=is%3Aopen+is%3Apr)
+[![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed-raw/ksdfg/hermes)](https://github.com/ksdfg/Hermes/pulls?q=is%3Apr+is%3Aclosed)
+[![GitHub](https://img.shields.io/github/license/ksdfg/hermes)](https://github.com/ksdfg/Hermes/blob/master/LICENSE)
 
 Web application for sending WhatsApp messages to multiple people at once.
 
