@@ -1,0 +1,27 @@
+[Unit]
+Description=Whatsapp Mass Messenger
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=always
+# Set working directory to where you've cloned the project
+WorkingDirectory=/home/user/Hermes
+
+# Remove old containers, images and volumes
+ExecStartPre=/usr/local/bin/docker-compose down -v
+ExecStartPre=/usr/local/bin/docker-compose rm -fv
+ExecStartPre=-/bin/bash -c 'docker volume ls -qf "name=%i_" | xargs docker volume rm'
+ExecStartPre=-/bin/bash -c 'docker network ls -qf "name=%i_" | xargs docker network rm'
+ExecStartPre=-/bin/bash -c 'docker ps -aqf "name=%i_*" | xargs docker rm'
+
+# Compose up
+ExecStart=/usr/local/bin/docker-compose up --build --abort-on-container-exit
+
+# Compose down, remove containers, untagged images and volumes
+ExecStop=/usr/local/bin/docker-compose down -v
+ExecStop=/usr/bin/docker rmi hermes_web_app:latest -f
+ExecStop=/usr/bin/docker image prune -f
+
+[Install]
+WantedBy=multi-user.target
