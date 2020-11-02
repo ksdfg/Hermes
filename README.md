@@ -16,6 +16,10 @@ message to multiple people (whether they are or aren't in your contacts
 list) with your number. It requires you to scan a QR code from your phone,
 so preferably use it from a desktop / laptop.
 
+This application is meant primarily for event management - to contact people who have
+signed up for events for relaying information and reminders. Any usage of this application
+outside of this usecase is not endorsed, and I will not take responsibility for it.
+
 ## To setup and run the application
 
 - Set a `secret` as an environment variable, or set in a `.env`.
