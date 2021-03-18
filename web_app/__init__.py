@@ -161,18 +161,18 @@ def send_messages(content, file, ids, username, log_phone, **kwargs):
         # Send messages to all registrants
         for entry in api_data:
             try:
-                print(f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone=91{entry['phone']}")
+                print(f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone={entry['phone']}")
                 # send message to entry['phone']ber, and then append entry['name'] + whatsapp api link to list of successes
                 meow.send_message(entry['phone'], content.replace("{{name}}", entry['name']), driver[username])
                 messages_sent_to.append(
-                    f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone=91{entry['phone']}"
+                    f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone={entry['phone']}"
                 )
             except Exception as e:  # if some error occured
                 print("Message could not be sent to", entry['name'])
                 print(e)
                 # append entry['name'] to list of failures
                 messages_not_sent_to.append(
-                    f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone=91{entry['phone']}"
+                    f"{entry['id']}. {entry['name']} : https://api.whatsapp.com/send?phone={entry['phone']}"
                 )
 
         print(username, "done sending messages!")
