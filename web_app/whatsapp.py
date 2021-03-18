@@ -4,8 +4,10 @@ from os.path import isfile
 from typing import Tuple
 
 from decouple import config
+from selenium.common.exceptions import JavascriptException
 
 from webwhatsapi import WhatsAPIDriver, ChatNotFoundError
+from webwhatsapi.wapi_js_wrapper import JsException
 
 
 def check_if_number_exists(driver: WhatsAPIDriver, number: str) -> bool:
@@ -65,4 +67,7 @@ def send_message(num: int, msg: str, driver: WhatsAPIDriver):
     """
     # get chat with user
     chat = driver.get_chat_from_phone_number(str(num), createIfNotFound=True)
-    chat.send_message(msg)  # send message
+    try:
+        chat.send_message(msg)  # send message
+    except (JsException, JavascriptException):
+        pass
